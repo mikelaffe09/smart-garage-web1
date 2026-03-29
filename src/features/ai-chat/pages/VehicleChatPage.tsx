@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { AlertTriangle, Bot, SendHorizonal } from "lucide-react";
 import { Navigate, useParams } from "react-router-dom";
 import { getMockVehicleById } from "@/features/vehicles/mockData";
@@ -49,11 +49,8 @@ export function VehicleChatPage() {
     return <Navigate to="/app/vehicles" replace />;
   }
 
+  const vehicleTitle = `${vehicle.year} ${vehicle.vehicleName}`;
   const hasAiSupport = Boolean(vehicle.vehicleKey?.trim());
-
-  const title = useMemo(() => {
-    return `${vehicle.year} ${vehicle.vehicleName}`;
-  }, [vehicle.year, vehicle.vehicleName]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -82,7 +79,7 @@ export function VehicleChatPage() {
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        text: buildReply(text, `${vehicle.year} ${vehicle.vehicleName}`),
+        text: buildReply(text, vehicleTitle),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -102,9 +99,7 @@ export function VehicleChatPage() {
             <h2 className="text-[28px] font-extrabold tracking-tight text-[#FF8A00]">
               AI Chat
             </h2>
-            <p className="mt-2 text-sm text-[#e2e8f0]">
-              Vehicle: {title}
-            </p>
+            <p className="mt-2 text-sm text-[#e2e8f0]">Vehicle: {vehicleTitle}</p>
           </div>
         </div>
 
