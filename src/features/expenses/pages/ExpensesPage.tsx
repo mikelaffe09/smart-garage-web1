@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
-import { mockVehicles } from "@/features/vehicles/mockData";
-import { getExpensesByCarId } from "@/features/expenses/mockData";
+import { Plus, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { useVehicles } from "@/features/vehicles/hooks";
+import { useDeleteExpense, useExpenses } from "@/features/expenses/hooks";
+import type { ExpenseItem } from "@/features/expenses/types";
 
 const CATEGORY_LABEL = {
   ROUTINE: "Routine Maintenance",
@@ -32,9 +34,57 @@ function formatDate(input: string) {
 }
 
 export function ExpensesPage() {
-  const carsWithExpenses = mockVehicles.filter(
-    (vehicle) => getExpensesByCarId(vehicle.id).length > 0
-  );
+  const vehiclesQuery = useVehicles();
+  const expensesQuery = useExpenses();
+  const deleteExpenseMutation = useDeleteExpense();
+
+  const vehicles = vehiclesQuery.data ?? [];
+  const expenses: ExpenseItem[] = expensesQuery.data ?? [];
+
+  const grouped = useMemo(() => {
+    const byCar = new Map<string, ExpenseItem[]>();
+
+    expenses.forEach((expense: ExpenseItem) => {
+      const key = String(expense.carId);
+      const existing = byCar.get(key) ?? [];
+      existing.push(expense);
+      byCar.set(key, existing);
+    });
+
+    return Array.from(byCar.entries()).map(([carId, items]) => {
+      const vehicle =
+        vehicles.find((vehicle) => String(vehicle.id) === String(carId)) ?? null;
+
+      const total = items.reduce(
+        (sum: number, item: ExpenseItem) => sum + Number(item.amount || 0),
+        0
+      );
+
+      return {
+        carId,
+        vehicle,
+        total,
+        items: items.sort((a, b) => {
+          const da = new Date(a.expenseDate).getTime();
+          const db = new Date(b.expenseDate).getTime();
+          return db - da;
+        }),
+      };
+    });
+  }, [expenses, vehicles]);
+
+  async function handleDelete(id: string, note: string) {
+    const confirmed = window.confirm(`Delete expense "${note}"?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteExpenseMutation.mutateAsync(id);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete expense.";
+      window.alert(message);
+    }
+  }
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -58,28 +108,39 @@ export function ExpensesPage() {
         </Link>
       </section>
 
-      <section className="space-y-4">
-        {carsWithExpenses.map((vehicle) => {
-          const expenses = getExpensesByCarId(vehicle.id);
-          const total = expenses.reduce((sum, item) => sum + item.amount, 0);
-
-          return (
+      {expensesQuery.isLoading ? (
+        <div className="rounded-[22px] border border-white/10 bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+          Loading expenses...
+        </div>
+      ) : expensesQuery.isError ? (
+        <div className="rounded-[22px] border border-red-200 bg-red-50 p-5 text-red-700 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+          Failed to load expenses.
+        </div>
+      ) : grouped.length === 0 ? (
+        <div className="rounded-[22px] border border-dashed border-white/20 bg-[#0f2236] p-6 text-white/75">
+          No expenses yet. Add your first expense to start tracking costs.
+        </div>
+      ) : (
+        <section className="space-y-4">
+          {grouped.map((group) => (
             <div
-              key={vehicle.id}
+              key={group.carId}
               className="rounded-[22px] border border-white/10 bg-[#506caa] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
             >
               <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-[18px] font-extrabold text-[#111827]">
-                    {vehicle.year} {vehicle.vehicleName}
+                    {group.vehicle
+                      ? `${group.vehicle.year} ${group.vehicle.vehicleName}`
+                      : "Unknown vehicle"}
                   </div>
                   <div className="mt-1 text-sm text-[#0b1220]/75">
-                    Total: {formatCurrency(total)}
+                    Total: {formatCurrency(group.total)}
                   </div>
                 </div>
 
                 <Link
-                  to={`/app/expenses/new?carId=${vehicle.id}`}
+                  to={`/app/expenses/new?carId=${group.carId}`}
                   className="inline-flex rounded-xl border border-white/70 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f3f4f6]"
                 >
                   Add for this vehicle
@@ -87,7 +148,7 @@ export function ExpensesPage() {
               </div>
 
               <div className="space-y-3">
-                {expenses.map((expense) => (
+                {group.items.map((expense: ExpenseItem) => (
                   <div
                     key={expense.id}
                     className="flex flex-col gap-4 rounded-[18px] border border-[#E5E7EB] bg-white p-4 lg:flex-row lg:items-start lg:justify-between"
@@ -101,7 +162,7 @@ export function ExpensesPage() {
                       </div>
                       {expense.mileage ? (
                         <div className="mt-1 text-xs text-[#6b7280]">
-                          Mileage: {expense.mileage.toLocaleString()} km
+                          Mileage: {Number(expense.mileage).toLocaleString()} km
                         </div>
                       ) : null}
                     </div>
@@ -111,29 +172,23 @@ export function ExpensesPage() {
                         {formatCurrency(expense.amount)}
                       </div>
 
-                      <div className="flex gap-2">
-                        <Link
-                          to={`/app/expenses/new?carId=${vehicle.id}`}
-                          className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f9fafb]"
-                        >
-                          Edit
-                        </Link>
-
-                        <button
-                          type="button"
-                          className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fef2f2]"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(expense.id, expense.note)}
+                        disabled={deleteExpenseMutation.isPending}
+                        className="inline-flex rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fef2f2] disabled:opacity-70"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          );
-        })}
-      </section>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

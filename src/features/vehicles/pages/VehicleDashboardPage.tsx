@@ -1,11 +1,11 @@
 import { Bot, CalendarClock, DollarSign, Pencil, Trash2 } from "lucide-react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import {
-  getMockExpenseSummary,
-  getMockVehicleById,
-  getMockVehicleReminders,
-} from "@/features/vehicles/mockData";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ReminderPreviewCard } from "@/features/vehicles/components/ReminderPreviewCard";
+import { useDeleteVehicle, useVehicle } from "@/features/vehicles/hooks";
+import { useVehicleReminders } from "@/features/reminders/hooks";
+import { useVehicleExpenses } from "@/features/expenses/hooks";
+import type { ReminderItem } from "@/features/reminders/api";
+import type { ExpenseItem } from "@/features/expenses/types";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -17,16 +17,54 @@ function formatCurrency(value: number) {
 
 export function VehicleDashboardPage() {
   const { carId = "" } = useParams();
+  const navigate = useNavigate();
 
-  const vehicle = getMockVehicleById(carId);
+  const vehicleQuery = useVehicle(carId);
+  const remindersQuery = useVehicleReminders(carId);
+  const expensesQuery = useVehicleExpenses(carId);
+  const deleteVehicleMutation = useDeleteVehicle();
 
-  if (!vehicle) {
+  const vehicle = vehicleQuery.data;
+  const reminders: ReminderItem[] = remindersQuery.data ?? [];
+  const expenses: ExpenseItem[] = expensesQuery.data ?? [];
+
+  const totalExpenses = expenses.reduce(
+    (sum: number, item: ExpenseItem) => sum + Number(item.amount || 0),
+    0
+  );
+
+  if (!vehicleQuery.isLoading && !vehicle) {
     return <Navigate to="/app/vehicles" replace />;
   }
 
-  const reminders = getMockVehicleReminders(vehicle.id);
-  const summary = getMockExpenseSummary(vehicle.id);
-  const hasAiSupport = Boolean(vehicle.vehicleKey?.trim());
+  async function handleDelete() {
+    if (!vehicle) return;
+
+    const confirmed = window.confirm(
+      `Delete ${vehicle.year} ${vehicle.vehicleName}? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteVehicleMutation.mutateAsync(String(vehicle.id));
+      navigate("/app/vehicles", { replace: true });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete vehicle.";
+      window.alert(message);
+    }
+  }
+
+  if (vehicleQuery.isLoading || !vehicle) {
+    return (
+      <div className="rounded-[24px] border border-white/10 bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+        Loading vehicle dashboard...
+      </div>
+    );
+  }
+
+  const hasAiSupport = Boolean(vehicle.vehicleKey && vehicle.vehicleKey !== "generic");
 
   return (
     <div className="space-y-5 pb-20 lg:pb-0">
@@ -35,7 +73,7 @@ export function VehicleDashboardPage() {
           {vehicle.year} {vehicle.vehicleName}
         </h2>
         <p className="mt-2 text-sm text-[#e2e8f0]">
-          Mileage: {vehicle.mileage.toLocaleString()} km
+          Mileage: {Number(vehicle.mileage || 0).toLocaleString()} km
         </p>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -58,10 +96,12 @@ export function VehicleDashboardPage() {
 
         <button
           type="button"
-          className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-transparent px-5 text-sm font-extrabold text-white transition hover:bg-white/8"
+          onClick={handleDelete}
+          disabled={deleteVehicleMutation.isPending}
+          className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-transparent px-5 text-sm font-extrabold text-white transition hover:bg-white/8 disabled:opacity-70"
         >
           <Trash2 className="h-4 w-4" />
-          Delete Vehicle
+          {deleteVehicleMutation.isPending ? "Deleting..." : "Delete Vehicle"}
         </button>
 
         <p className="mt-4 text-xs leading-6 text-[#dbeafe]">
@@ -81,10 +121,10 @@ export function VehicleDashboardPage() {
           </div>
 
           <div className="mt-4 text-3xl font-extrabold">
-            {formatCurrency(summary.total)}
+            {formatCurrency(totalExpenses)}
           </div>
           <div className="mt-2 text-sm text-[#374151]">
-            {summary.count} transaction{summary.count === 1 ? "" : "s"}
+            {expenses.length} transaction{expenses.length === 1 ? "" : "s"}
           </div>
         </div>
 
@@ -120,13 +160,17 @@ export function VehicleDashboardPage() {
           </Link>
         </div>
 
-        {reminders.length === 0 ? (
+        {remindersQuery.isLoading ? (
+          <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
+            Loading reminders...
+          </div>
+        ) : reminders.length === 0 ? (
           <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
             No reminders found for this vehicle yet.
           </div>
         ) : (
           <div className="space-y-3">
-            {reminders.slice(0, 3).map((reminder) => (
+            {reminders.slice(0, 3).map((reminder: ReminderItem) => (
               <ReminderPreviewCard key={reminder.id} reminder={reminder} />
             ))}
           </div>

@@ -1,10 +1,15 @@
-import type { VehicleReminder } from "@/features/vehicles/types";
-
-type ReminderPreviewCardProps = {
-  reminder: VehicleReminder;
+type ReminderPreview = {
+  id: string;
+  title: string;
+  dueDate?: string | null;
+  status: "Upcoming" | "Overdue" | "Completed";
 };
 
-function getStatusClasses(status: VehicleReminder["status"]) {
+type ReminderPreviewCardProps = {
+  reminder: ReminderPreview;
+};
+
+function getStatusClasses(status: ReminderPreview["status"]) {
   if (status === "Overdue") {
     return "bg-red-50 text-red-700 border-red-200";
   }
@@ -16,7 +21,9 @@ function getStatusClasses(status: VehicleReminder["status"]) {
   return "bg-amber-50 text-amber-700 border-amber-200";
 }
 
-function formatDate(input: string) {
+function formatDate(input?: string | null) {
+  if (!input) return "No date";
+
   const date = new Date(input);
 
   if (Number.isNaN(date.getTime())) {
@@ -35,8 +42,12 @@ export function ReminderPreviewCard({ reminder }: ReminderPreviewCardProps) {
     <div className="rounded-[18px] border border-[#e5e7eb] bg-white p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="text-sm font-extrabold text-[#111827]">{reminder.title}</div>
-          <div className="mt-1 text-xs text-[#6b7280]">Due: {formatDate(reminder.dueDate)}</div>
+          <div className="text-sm font-extrabold text-[#111827]">
+            {reminder.title}
+          </div>
+          <div className="mt-1 text-xs text-[#6b7280]">
+            Due: {formatDate(reminder.dueDate)}
+          </div>
         </div>
 
         <div

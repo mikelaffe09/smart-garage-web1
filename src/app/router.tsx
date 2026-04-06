@@ -20,11 +20,12 @@ import { ExpensesPage } from "@/features/expenses/pages/ExpensesPage";
 import { AddExpensePage } from "@/features/expenses/pages/AddExpensePage";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import { UpdateProfilePage } from "@/features/profile/pages/UpdateProfilePage";
+import { LandingPage } from "@/features/landing/pages/LandingPage";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/app" replace />,
+    element: <LandingPage />,
   },
   {
     element: <GuestRoute />,
@@ -61,11 +62,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: (
-      <div className="flex min-h-screen items-center justify-center bg-[#09192a] text-white">
-        Page not found
-      </div>
-    ),
+    element: <Navigate to="/" replace />,
   },
 ]);
 

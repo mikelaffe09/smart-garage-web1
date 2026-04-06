@@ -1,7 +1,9 @@
 import { FormEvent, useState } from "react";
 import { AlertTriangle, Bot, SendHorizonal } from "lucide-react";
 import { Navigate, useParams } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { getMockVehicleById } from "@/features/vehicles/mockData";
+import { askVehicleAi } from "@/features/ai-chat/api";
 
 type ChatMessage = {
   id: string;
@@ -9,26 +11,23 @@ type ChatMessage = {
   text: string;
 };
 
-function buildReply(question: string, vehicleName: string) {
-  const q = question.toLowerCase();
+function splitVehicleName(vehicleName: string) {
+  const s = String(vehicleName || "").trim();
 
-  if (q.includes("click") || q.includes("starting") || q.includes("start")) {
-    return `For ${vehicleName}, a clicking sound while starting often points to a weak battery, poor terminal connection, or starter issue. Check battery voltage and terminal corrosion first.`;
+  if (!s) {
+    return { make: "", model: "" };
   }
 
-  if (q.includes("brake")) {
-    return `If the brakes feel weak or noisy on ${vehicleName}, inspect pad thickness, rotor wear, and brake fluid level. Do not ignore vibration or grinding.`;
+  const parts = s.split(" ").filter(Boolean);
+
+  if (parts.length === 1) {
+    return { make: parts[0], model: parts[0] };
   }
 
-  if (q.includes("oil")) {
-    return `For oil-related questions on ${vehicleName}, start with oil level, service interval, leaks under the vehicle, and whether the engine is running rough or louder than usual.`;
-  }
-
-  if (q.includes("engine light") || q.includes("check engine")) {
-    return `A check-engine light on ${vehicleName} needs a scan before guessing. Start with any recent symptoms, fuel cap tightness, idle quality, and whether the light is flashing or steady.`;
-  }
-
-  return `Based on your question about ${vehicleName}, start by identifying when the symptom happens, whether it is constant or intermittent, and if there are warning lights, fluid leaks, unusual sounds, or performance loss.`;
+  return {
+    make: parts[0],
+    model: parts.slice(1).join(" "),
+  };
 }
 
 export function VehicleChatPage() {
@@ -36,7 +35,6 @@ export function VehicleChatPage() {
   const vehicle = getMockVehicleById(carId);
 
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -52,11 +50,46 @@ export function VehicleChatPage() {
   const vehicleTitle = `${vehicle.year} ${vehicle.vehicleName}`;
   const hasAiSupport = Boolean(vehicle.vehicleKey?.trim());
 
+  const askMutation = useMutation({
+    mutationFn: async (question: string) => {
+      const parsed = splitVehicleName(vehicle.vehicleName);
+
+      return askVehicleAi({
+        externalVehicleId: String(vehicle.id),
+        vehicleKey: String(vehicle.vehicleKey || ""),
+        vehicleName:
+          String(vehicle.vehicleName || "").trim() ||
+          `${parsed.make} ${parsed.model}`.trim(),
+        vehicleModel: parsed.model || vehicle.vehicleName || "",
+        mileage: Number(vehicle.mileage || 0),
+        question,
+      });
+    },
+    onSuccess: (result) => {
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        text: result?.answer || "No answer returned by the AI service.",
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    },
+    onError: (error) => {
+      const assistantMessage: ChatMessage = {
+        id: `assistant-error-${Date.now()}`,
+        role: "assistant",
+        text: error instanceof Error ? error.message : "The AI request failed.",
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    },
+  });
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     const text = input.trim();
-    if (!text || sending) return;
+    if (!text || askMutation.isPending) return;
 
     if (!hasAiSupport) {
       window.alert(
@@ -73,18 +106,8 @@ export function VehicleChatPage() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setSending(true);
 
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        text: buildReply(text, vehicleTitle),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setSending(false);
-    }, 700);
+    await askMutation.mutateAsync(text);
   }
 
   return (
@@ -136,7 +159,7 @@ export function VehicleChatPage() {
             </div>
           ))}
 
-          {sending ? (
+          {askMutation.isPending ? (
             <div className="max-w-[85%] rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-[#111827] shadow-sm">
               <div className="mb-1 text-xs font-extrabold uppercase tracking-[0.1em] opacity-70">
                 AI
@@ -160,7 +183,7 @@ export function VehicleChatPage() {
 
           <button
             type="submit"
-            disabled={sending || !hasAiSupport}
+            disabled={askMutation.isPending || !hasAiSupport}
             className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#FF8A00] px-5 text-sm font-extrabold text-[#111827] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <SendHorizonal className="h-4 w-4" />

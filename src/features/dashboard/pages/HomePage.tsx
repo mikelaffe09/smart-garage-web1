@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Bell, Bot, CarFront, DollarSign, Plus, Wrench } from "lucide-react";
 import { useAuth } from "@/features/auth/useAuth";
-import { mockVehicles } from "@/features/vehicles/mockData";
 import { VehicleCard } from "@/features/vehicles/components/VehicleCard";
+import { useVehicles } from "@/features/vehicles/hooks";
+import { useReminders } from "@/features/reminders/hooks";
+import { useExpenses } from "@/features/expenses/hooks";
 
 function getDisplayName(rawName?: string | null, email?: string | null) {
   const trimmed = rawName?.trim();
@@ -17,6 +19,15 @@ function getPossessive(name: string) {
 
 export function HomePage() {
   const { user } = useAuth();
+  const vehiclesQuery = useVehicles();
+  const remindersQuery = useReminders();
+  const expensesQuery = useExpenses();
+
+  const vehicles = vehiclesQuery.data ?? [];
+  const reminders = remindersQuery.data ?? [];
+  const expenses = expensesQuery.data ?? [];
+
+  const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   const displayName = getDisplayName(
     (user?.user_metadata?.name as string | undefined) ?? null,
@@ -57,7 +68,7 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Vehicles</span>
             <CarFront className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">{mockVehicles.length}</div>
+          <div className="mt-4 text-3xl font-extrabold">{vehicles.length}</div>
           <p className="mt-2 text-sm text-[#6b7280]">Vehicles in your garage.</p>
         </div>
 
@@ -66,7 +77,7 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Reminders</span>
             <Bell className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">5</div>
+          <div className="mt-4 text-3xl font-extrabold">{reminders.length}</div>
           <p className="mt-2 text-sm text-[#6b7280]">Upcoming and overdue tasks.</p>
         </div>
 
@@ -75,7 +86,7 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Expenses</span>
             <DollarSign className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">$5,196</div>
+          <div className="mt-4 text-3xl font-extrabold">${totalExpenses.toLocaleString()}</div>
           <p className="mt-2 text-sm text-[#6b7280]">Tracked ownership spending.</p>
         </div>
 
@@ -108,9 +119,19 @@ export function HomePage() {
           </div>
 
           <div className="mt-5 space-y-3">
-            {mockVehicles.slice(0, 2).map((vehicle) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} />
-            ))}
+            {vehiclesQuery.isLoading ? (
+              <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
+                Loading vehicles...
+              </div>
+            ) : vehicles.length === 0 ? (
+              <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
+                No vehicles added yet.
+              </div>
+            ) : (
+              vehicles.slice(0, 2).map((vehicle) => (
+                <VehicleCard key={vehicle.id} vehicle={vehicle} />
+              ))
+            )}
           </div>
         </div>
 
