@@ -1,15 +1,6 @@
 import { apiFetch } from "@/shared/api/client";
 import type { Vehicle } from "@/features/vehicles/types";
 
-export type VehicleCatalogRow = {
-  id: string;
-  make: string;
-  model: string;
-  yearStart: number;
-  yearEnd: number;
-  vehicleKey: string;
-};
-
 export type CreateVehicleInput = {
   vehicleKey?: string;
   vehicleName: string;
@@ -25,6 +16,12 @@ export type UpdateVehicleInput = {
   mileage?: number;
   imageUrl?: string | null;
 };
+
+export type ResolvedVehicleDoc = {
+  vehicleKey: string;
+  yearStart: number;
+  yearEnd: number;
+} | null;
 
 export async function listVehicles() {
   return apiFetch<Vehicle[]>("/api/garage/cars");
@@ -53,15 +50,31 @@ export async function updateVehicle(carId: string, input: UpdateVehicleInput) {
     throw new Error("Missing car id");
   }
 
+  const body: Record<string, unknown> = {};
+
+  if (input.vehicleKey !== undefined) {
+    body.vehicleKey = input.vehicleKey?.trim() ?? "";
+  }
+
+  if (input.vehicleName !== undefined) {
+    body.vehicleName = input.vehicleName.trim();
+  }
+
+  if (input.year !== undefined) {
+    body.year = Number(input.year);
+  }
+
+  if (input.mileage !== undefined) {
+    body.mileage = Number(input.mileage);
+  }
+
+  if (input.imageUrl !== undefined) {
+    body.imageUrl = input.imageUrl ?? null;
+  }
+
   return apiFetch<Vehicle>(`/api/garage/cars/${carId}`, {
     method: "PUT",
-    body: {
-      vehicleKey: input.vehicleKey?.trim() || "",
-      vehicleName: input.vehicleName?.trim(),
-      year: input.year,
-      mileage: input.mileage,
-      imageUrl: input.imageUrl ?? null,
-    },
+    body,
   });
 }
 
@@ -75,6 +88,46 @@ export async function deleteVehicle(carId: string) {
   });
 }
 
-export async function listVehicleCatalog() {
-  return apiFetch<VehicleCatalogRow[]>("/api/vehicle-catalog");
+export async function listVehicleMakes() {
+  return apiFetch<string[]>("/api/VehicleDocs/makes");
+}
+
+export async function listVehicleModels(make: string) {
+  if (!make.trim()) {
+    return [];
+  }
+
+  const search = new URLSearchParams({ make: make.trim() }).toString();
+  return apiFetch<string[]>(`/api/VehicleDocs/models?${search}`);
+}
+
+export async function listVehicleYears(make: string, model: string) {
+  if (!make.trim() || !model.trim()) {
+    return [];
+  }
+
+  const search = new URLSearchParams({
+    make: make.trim(),
+    model: model.trim(),
+  }).toString();
+
+  return apiFetch<number[]>(`/api/VehicleDocs/years?${search}`);
+}
+
+export async function resolveVehicleDoc(
+  make: string,
+  model: string,
+  year: number
+) {
+  if (!make.trim() || !model.trim() || !Number(year)) {
+    return null;
+  }
+
+  const search = new URLSearchParams({
+    make: make.trim(),
+    model: model.trim(),
+    year: String(Number(year)),
+  }).toString();
+
+  return apiFetch<ResolvedVehicleDoc>(`/api/VehicleDocs/resolve?${search}`);
 }

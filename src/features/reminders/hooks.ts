@@ -6,7 +6,9 @@ import {
   deleteReminder,
   listReminders,
   listRemindersByCarId,
+  updateReminder,
   type ReminderItem,
+  type SaveReminderInput,
 } from "@/features/reminders/api";
 import {
   getMockVehicleReminders,
@@ -54,13 +56,35 @@ export function useVehicleReminders(carId: string) {
   });
 }
 
+async function invalidateReminderQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await queryClient.invalidateQueries({ queryKey: ["reminders"] });
+  await queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+}
+
 export function useCreateReminder() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: createReminder,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      await invalidateReminderQueries(queryClient);
+    },
+  });
+}
+
+export function useUpdateReminder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: Partial<SaveReminderInput> & { isCompleted?: boolean };
+    }) => updateReminder(id, input),
+    onSuccess: async () => {
+      await invalidateReminderQueries(queryClient);
     },
   });
 }
@@ -71,7 +95,7 @@ export function useDeleteReminder() {
   return useMutation({
     mutationFn: deleteReminder,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      await invalidateReminderQueries(queryClient);
     },
   });
 }
@@ -82,7 +106,7 @@ export function useCompleteReminder() {
   return useMutation({
     mutationFn: completeReminder,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      await invalidateReminderQueries(queryClient);
     },
   });
 }

@@ -22,10 +22,13 @@ function getPageTitle(pathname: string) {
   if (pathname === "/app") return "Home";
   if (pathname === "/app/vehicles") return "Vehicles";
   if (pathname === "/app/vehicles/new") return "Add Vehicle";
+  if (/^\/app\/vehicles\/[^/]+\/edit$/.test(pathname)) return "Edit Vehicle";
   if (pathname === "/app/reminders") return "Reminders";
   if (pathname === "/app/reminders/new") return "Add Reminder";
+  if (/^\/app\/reminders\/[^/]+\/edit$/.test(pathname)) return "Edit Reminder";
   if (pathname === "/app/expenses") return "Expenses";
   if (pathname === "/app/expenses/new") return "Add Expense";
+  if (/^\/app\/expenses\/[^/]+\/edit$/.test(pathname)) return "Edit Expense";
   if (pathname === "/app/profile") return "Profile";
   if (pathname === "/app/profile/update") return "Update Profile";
   if (/^\/app\/vehicles\/[^/]+\/chat$/.test(pathname)) return "AI Mechanic Chat";

@@ -6,6 +6,7 @@ import { useVehicleReminders } from "@/features/reminders/hooks";
 import { useVehicleExpenses } from "@/features/expenses/hooks";
 import type { ReminderItem } from "@/features/reminders/api";
 import type { ExpenseItem } from "@/features/expenses/types";
+import { StateCard } from "@/shared/ui/page";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -49,22 +50,25 @@ export function VehicleDashboardPage() {
     try {
       await deleteVehicleMutation.mutateAsync(String(vehicle.id));
       navigate("/app/vehicles", { replace: true });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete vehicle.";
-      window.alert(message);
+    } catch {
+      // handled elsewhere with toasts if added later
     }
   }
 
   if (vehicleQuery.isLoading || !vehicle) {
     return (
-      <div className="rounded-[24px] border border-white/10 bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
-        Loading vehicle dashboard...
-      </div>
+      <StateCard
+        variant="loading"
+        description="Loading vehicle dashboard..."
+      />
     );
   }
 
-  const hasAiSupport = Boolean(vehicle.vehicleKey && vehicle.vehicleKey !== "generic");
+  const hasAiSupport = Boolean(
+    vehicle.vehicleKey &&
+      String(vehicle.vehicleKey).trim() !== "" &&
+      vehicle.vehicleKey !== "generic"
+  );
 
   return (
     <div className="space-y-5 pb-20 lg:pb-0">
@@ -86,7 +90,7 @@ export function VehicleDashboardPage() {
           </Link>
 
           <Link
-            to="/app/vehicles/new"
+            to={`/app/vehicles/${vehicle.id}/edit`}
             className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0B1220] px-5 text-sm font-extrabold text-white transition hover:opacity-95"
           >
             <Pencil className="h-4 w-4" />
@@ -121,7 +125,7 @@ export function VehicleDashboardPage() {
           </div>
 
           <div className="mt-4 text-3xl font-extrabold">
-            {formatCurrency(totalExpenses)}
+            {expensesQuery.isLoading ? "—" : formatCurrency(totalExpenses)}
           </div>
           <div className="mt-2 text-sm text-[#374151]">
             {expenses.length} transaction{expenses.length === 1 ? "" : "s"}
@@ -136,7 +140,9 @@ export function VehicleDashboardPage() {
             <CalendarClock className="h-5 w-5 text-[#FF8A00]" />
           </div>
 
-          <div className="mt-4 text-3xl font-extrabold">{reminders.length}</div>
+          <div className="mt-4 text-3xl font-extrabold">
+            {remindersQuery.isLoading ? "—" : reminders.length}
+          </div>
           <div className="mt-2 text-sm text-[#374151]">
             Open this vehicle’s reminders
           </div>
@@ -161,13 +167,22 @@ export function VehicleDashboardPage() {
         </div>
 
         {remindersQuery.isLoading ? (
-          <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
-            Loading reminders...
-          </div>
+          <StateCard
+            variant="loading"
+            description="Loading reminders for this vehicle..."
+          />
+        ) : remindersQuery.isError ? (
+          <StateCard
+            variant="error"
+            title="Failed to load reminders"
+            description="This vehicle’s reminders could not be loaded."
+          />
         ) : reminders.length === 0 ? (
-          <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
-            No reminders found for this vehicle yet.
-          </div>
+          <StateCard
+            variant="empty"
+            title="No reminders for this vehicle"
+            description="Add a reminder to start tracking upcoming work."
+          />
         ) : (
           <div className="space-y-3">
             {reminders.slice(0, 3).map((reminder: ReminderItem) => (
@@ -203,7 +218,7 @@ export function VehicleDashboardPage() {
           </Link>
 
           <Link
-            to="/app/vehicles/new"
+            to={`/app/vehicles/${vehicle.id}/edit`}
             className="rounded-2xl border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-4 text-sm font-extrabold transition hover:bg-[#e5e7eb]"
           >
             Edit Vehicle

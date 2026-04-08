@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/features/auth/useAuth";
+import { deleteProfile } from "@/features/profile/api";
+import { useToast } from "@/shared/toast/useToast";
 
 function getInitials(nameOrEmail?: string | null) {
   const value = String(nameOrEmail || "").trim();
@@ -18,41 +20,22 @@ function RowLink({
   to,
   title,
   subtitle,
-  danger = false,
 }: {
   to: string;
   title: string;
   subtitle: string;
-  danger?: boolean;
 }) {
   return (
     <Link
       to={to}
-      className={[
-        "flex items-center justify-between gap-4 px-4 py-4 transition",
-        danger ? "bg-[#1a0f12] hover:bg-[#231317]" : "hover:bg-white/5",
-      ].join(" ")}
+      className="flex items-center justify-between gap-4 px-4 py-4 transition hover:bg-white/5"
     >
       <div>
-        <div
-          className={[
-            "text-sm font-extrabold",
-            danger ? "text-[#fecaca]" : "text-white",
-          ].join(" ")}
-        >
-          {title}
-        </div>
-        <div
-          className={[
-            "mt-1 text-xs",
-            danger ? "text-[#fca5a5]" : "text-[#cbd5e1]",
-          ].join(" ")}
-        >
-          {subtitle}
-        </div>
+        <div className="text-sm font-extrabold text-white">{title}</div>
+        <div className="mt-1 text-xs text-[#cbd5e1]">{subtitle}</div>
       </div>
 
-      <div className={danger ? "text-[#fca5a5]" : "text-[#cbd5e1]"}>›</div>
+      <div className="text-[#cbd5e1]">›</div>
     </Link>
   );
 }
@@ -60,15 +43,65 @@ function RowLink({
 export function ProfilePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const displayName =
-    (user?.user_metadata?.name as string | undefined) || user?.email || "User";
+    (user?.user_metadata?.name as string | undefined)?.trim() ||
+    user?.email ||
+    "User";
 
   const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   async function handleSignOut() {
-    await signOut();
-    navigate("/sign-in", { replace: true });
+    try {
+      setIsSigningOut(true);
+      await signOut();
+      navigate("/sign-in", { replace: true });
+    } catch (error) {
+      showToast({
+        title: "Failed to sign out",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Delete your account? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+
+      await deleteProfile();
+      await signOut();
+
+      showToast({
+        title: "Account deleted",
+        description: "Your Smart Garage profile has been removed.",
+        variant: "success",
+      });
+
+      navigate("/", { replace: true });
+    } catch (error) {
+      showToast({
+        title: "Failed to delete account",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -106,7 +139,7 @@ export function ProfilePage() {
           <RowLink
             to="/app/profile/update"
             title="Update profile"
-            subtitle="Change your name"
+            subtitle="Change your display name"
           />
         </section>
       </div>
@@ -117,22 +150,18 @@ export function ProfilePage() {
         </div>
 
         <section className="overflow-hidden rounded-[18px] border border-white/10 bg-[#0f2236]">
-          <RowLink
-            to="/app/profile/update"
-            title="Profile settings"
-            subtitle="Manage account information"
-          />
-          <div className="h-px bg-white/10" />
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-4 bg-[#1a0f12] px-4 py-4 text-left transition hover:bg-[#231317]"
+            onClick={handleDeleteAccount}
+            disabled={isDeleting}
+            className="flex w-full items-center justify-between gap-4 bg-[#1a0f12] px-4 py-4 text-left transition hover:bg-[#231317] disabled:opacity-70"
           >
             <div>
               <div className="text-sm font-extrabold text-[#fecaca]">
-                Delete account
+                {isDeleting ? "Deleting account..." : "Delete account"}
               </div>
               <div className="mt-1 text-xs text-[#fca5a5]">
-                Backend action will be wired next
+                Permanently remove your Smart Garage profile
               </div>
             </div>
             <div className="text-[#fca5a5]">›</div>
@@ -143,9 +172,10 @@ export function ProfilePage() {
       <button
         type="button"
         onClick={handleSignOut}
-        className="h-12 w-full rounded-2xl bg-white px-5 text-sm font-extrabold text-[#111827] transition hover:bg-[#f3f4f6]"
+        disabled={isSigningOut}
+        className="h-12 w-full rounded-2xl bg-white px-5 text-sm font-extrabold text-[#111827] transition hover:bg-[#f3f4f6] disabled:opacity-70"
       >
-        Sign Out
+        {isSigningOut ? "Signing out..." : "Sign Out"}
       </button>
 
       <div className="text-center text-xs text-[#94a3b8]">

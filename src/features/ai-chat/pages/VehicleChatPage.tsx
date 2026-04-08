@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { AlertTriangle, Bot, SendHorizonal } from "lucide-react";
 import { Navigate, useParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { getMockVehicleById } from "@/features/vehicles/mockData";
 import { askVehicleAi } from "@/features/ai-chat/api";
+import { useVehicle } from "@/features/vehicles/hooks";
+import { useToast } from "@/shared/toast/useToast";
 
 type ChatMessage = {
   id: string;
@@ -32,7 +33,9 @@ function splitVehicleName(vehicleName: string) {
 
 export function VehicleChatPage() {
   const { carId = "" } = useParams();
-  const vehicle = getMockVehicleById(carId);
+  const { showToast } = useToast();
+
+  const vehicleQuery = useVehicle(carId);
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -43,23 +46,20 @@ export function VehicleChatPage() {
     },
   ]);
 
-  if (!vehicle) {
-    return <Navigate to="/app/vehicles" replace />;
-  }
-
-  const vehicleTitle = `${vehicle.year} ${vehicle.vehicleName}`;
-  const hasAiSupport = Boolean(vehicle.vehicleKey?.trim());
+  const vehicle = vehicleQuery.data;
 
   const askMutation = useMutation({
     mutationFn: async (question: string) => {
+      if (!vehicle) {
+        throw new Error("Vehicle not found.");
+      }
+
       const parsed = splitVehicleName(vehicle.vehicleName);
 
       return askVehicleAi({
         externalVehicleId: String(vehicle.id),
         vehicleKey: String(vehicle.vehicleKey || ""),
-        vehicleName:
-          String(vehicle.vehicleName || "").trim() ||
-          `${parsed.make} ${parsed.model}`.trim(),
+        vehicleName: String(vehicle.vehicleName || "").trim(),
         vehicleModel: parsed.model || vehicle.vehicleName || "",
         mileage: Number(vehicle.mileage || 0),
         question,
@@ -75,26 +75,51 @@ export function VehicleChatPage() {
       setMessages((prev) => [...prev, assistantMessage]);
     },
     onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "The AI request failed.";
+
       const assistantMessage: ChatMessage = {
         id: `assistant-error-${Date.now()}`,
         role: "assistant",
-        text: error instanceof Error ? error.message : "The AI request failed.",
+        text: message,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      showToast({
+        title: "AI request failed",
+        description: message,
+        variant: "error",
+      });
     },
   });
+
+  const vehicleTitle = useMemo(() => {
+    if (!vehicle) return "";
+    return `${vehicle.year} ${vehicle.vehicleName}`;
+  }, [vehicle]);
+
+  const hasAiSupport = Boolean(
+    vehicle?.vehicleKey && String(vehicle.vehicleKey).trim() !== "" && vehicle.vehicleKey !== "generic"
+  );
+
+  if (!vehicleQuery.isLoading && !vehicle) {
+    return <Navigate to="/app/vehicles" replace />;
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     const text = input.trim();
-    if (!text || askMutation.isPending) return;
+    if (!text || askMutation.isPending || !vehicle) return;
 
     if (!hasAiSupport) {
-      window.alert(
-        "Vehicle-specific AI support is not available yet for this custom vehicle."
-      );
+      showToast({
+        title: "AI not available for this vehicle",
+        description:
+          "This custom vehicle does not have a supported vehicle catalog key yet.",
+        variant: "info",
+      });
       return;
     }
 
@@ -108,6 +133,14 @@ export function VehicleChatPage() {
     setInput("");
 
     await askMutation.mutateAsync(text);
+  }
+
+  if (vehicleQuery.isLoading) {
+    return (
+      <div className="rounded-[24px] border border-white/10 bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+        Loading AI chat...
+      </div>
+    );
   }
 
   return (
@@ -130,7 +163,7 @@ export function VehicleChatPage() {
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-800 bg-red-950/60 p-4 text-red-100">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="text-sm leading-7">
-              This vehicle does not have a valid supported vehicle key, so the AI cannot answer vehicle-specific questions for it yet.
+              This vehicle does not have a supported vehicle key, so the AI cannot answer vehicle-specific questions for it yet.
             </div>
           </div>
         ) : null}
@@ -155,7 +188,7 @@ export function VehicleChatPage() {
               <div className="mb-1 text-xs font-extrabold uppercase tracking-[0.1em] opacity-70">
                 {message.role === "user" ? "You" : "AI"}
               </div>
-              <div className="text-sm leading-7">{message.text}</div>
+              <div className="text-sm leading-7 whitespace-pre-wrap">{message.text}</div>
             </div>
           ))}
 

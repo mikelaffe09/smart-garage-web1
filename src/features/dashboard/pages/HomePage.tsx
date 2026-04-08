@@ -5,6 +5,7 @@ import { VehicleCard } from "@/features/vehicles/components/VehicleCard";
 import { useVehicles } from "@/features/vehicles/hooks";
 import { useReminders } from "@/features/reminders/hooks";
 import { useExpenses } from "@/features/expenses/hooks";
+import { PageIntro, StateCard } from "@/shared/ui/page";
 
 function getDisplayName(rawName?: string | null, email?: string | null) {
   const trimmed = rawName?.trim();
@@ -27,7 +28,10 @@ export function HomePage() {
   const reminders = remindersQuery.data ?? [];
   const expenses = expensesQuery.data ?? [];
 
-  const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalExpenses = expenses.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  );
 
   const displayName = getDisplayName(
     (user?.user_metadata?.name as string | undefined) ?? null,
@@ -35,23 +39,16 @@ export function HomePage() {
   );
 
   const garageTitle = `${getPossessive(displayName)} Garage`;
+  const loadingSummary =
+    vehiclesQuery.isLoading || remindersQuery.isLoading || expensesQuery.isLoading;
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
-      <section className="rounded-[30px] bg-gradient-to-br from-[#10253d] to-[#0b1c2e] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.22)] ring-1 ring-white/8 sm:p-7">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.18em] text-white/45">
-              Dashboard
-            </p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#FF8A00] sm:text-4xl">
-              {garageTitle}
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
-              Manage your vehicles, track maintenance, control expenses, and use the AI mechanic assistant from one place.
-            </p>
-          </div>
-
+      <PageIntro
+        eyebrow="Dashboard"
+        title={garageTitle}
+        description="Manage your vehicles, track maintenance, control expenses, and use the AI mechanic assistant from one place."
+        action={
           <Link
             to="/app/vehicles/new"
             className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#FF8A00] px-5 text-sm font-bold text-[#111827] shadow-[0_10px_25px_rgba(255,138,0,0.28)] transition hover:brightness-95"
@@ -59,8 +56,8 @@ export function HomePage() {
             <Plus className="h-4 w-4" />
             Add Vehicle
           </Link>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.16)]">
@@ -68,7 +65,9 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Vehicles</span>
             <CarFront className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">{vehicles.length}</div>
+          <div className="mt-4 text-3xl font-extrabold">
+            {loadingSummary ? "—" : vehicles.length}
+          </div>
           <p className="mt-2 text-sm text-[#6b7280]">Vehicles in your garage.</p>
         </div>
 
@@ -77,7 +76,9 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Reminders</span>
             <Bell className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">{reminders.length}</div>
+          <div className="mt-4 text-3xl font-extrabold">
+            {loadingSummary ? "—" : reminders.length}
+          </div>
           <p className="mt-2 text-sm text-[#6b7280]">Upcoming and overdue tasks.</p>
         </div>
 
@@ -86,7 +87,9 @@ export function HomePage() {
             <span className="text-sm font-semibold text-[#374151]">Expenses</span>
             <DollarSign className="h-5 w-5 text-[#FF8A00]" />
           </div>
-          <div className="mt-4 text-3xl font-extrabold">${totalExpenses.toLocaleString()}</div>
+          <div className="mt-4 text-3xl font-extrabold">
+            {loadingSummary ? "—" : `$${totalExpenses.toLocaleString()}`}
+          </div>
           <p className="mt-2 text-sm text-[#6b7280]">Tracked ownership spending.</p>
         </div>
 
@@ -120,13 +123,22 @@ export function HomePage() {
 
           <div className="mt-5 space-y-3">
             {vehiclesQuery.isLoading ? (
-              <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
-                Loading vehicles...
-              </div>
+              <StateCard
+                variant="loading"
+                description="Loading your vehicles..."
+              />
+            ) : vehiclesQuery.isError ? (
+              <StateCard
+                variant="error"
+                title="Failed to load vehicles"
+                description="Your garage could not be loaded right now."
+              />
             ) : vehicles.length === 0 ? (
-              <div className="rounded-[18px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-4 py-5 text-sm text-[#6b7280]">
-                No vehicles added yet.
-              </div>
+              <StateCard
+                variant="empty"
+                title="No vehicles yet"
+                description="Add your first vehicle to start using Smart Garage properly."
+              />
             ) : (
               vehicles.slice(0, 2).map((vehicle) => (
                 <VehicleCard key={vehicle.id} vehicle={vehicle} />

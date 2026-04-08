@@ -1,23 +1,32 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/useAuth";
 import { supabase } from "@/shared/supabase/client";
+import { useToast } from "@/shared/toast/useToast";
 
 export function UpdateProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
-  const [name, setName] = useState(
-    ((user?.user_metadata?.name as string | undefined) ?? "").trim()
-  );
+  const initialName = useMemo(() => {
+    return ((user?.user_metadata?.name as string | undefined) ?? "").trim();
+  }, [user]);
+
+  const [name, setName] = useState(initialName);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     const cleanName = name.trim();
+
     if (!cleanName) {
-      window.alert("Enter a valid name first.");
+      showToast({
+        title: "Invalid name",
+        description: "Enter a valid name first.",
+        variant: "error",
+      });
       return;
     }
 
@@ -32,11 +41,27 @@ export function UpdateProfilePage() {
         throw error;
       }
 
+      // Force session refresh so the updated user metadata is reflected immediately.
+      const { error: refreshError } = await supabase.auth.refreshSession();
+
+      if (refreshError) {
+        throw refreshError;
+      }
+
+      showToast({
+        title: "Profile updated",
+        description: "Your name was updated successfully.",
+        variant: "success",
+      });
+
       navigate("/app/profile");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update profile.";
-      window.alert(message);
+      showToast({
+        title: "Failed to update profile",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      });
     } finally {
       setSaving(false);
     }

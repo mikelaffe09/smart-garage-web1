@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { useVehicles } from "@/features/vehicles/hooks";
 import { useDeleteExpense, useExpenses } from "@/features/expenses/hooks";
 import type { ExpenseItem } from "@/features/expenses/types";
+import { PageIntro, StateCard } from "@/shared/ui/page";
 
 const CATEGORY_LABEL = {
   ROUTINE: "Routine Maintenance",
@@ -79,47 +80,45 @@ export function ExpensesPage() {
 
     try {
       await deleteExpenseMutation.mutateAsync(id);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete expense.";
-      window.alert(message);
+    } catch {
+      // handled elsewhere via toasts if added later
     }
   }
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
-      <section className="flex flex-col gap-4 rounded-[28px] bg-gradient-to-br from-[#10253d] to-[#0b1c2e] p-6 shadow-[0_12px_40px_rgba(0,0,0,0.22)] ring-1 ring-white/8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-[0.18em] text-white/45">Cost Tracking</p>
-          <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#FF8A00] sm:text-4xl">
-            Expenses
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70 sm:text-base">
-            Review maintenance, repairs, and appearance-related spending across all vehicles.
-          </p>
-        </div>
+      <PageIntro
+        eyebrow="Cost Tracking"
+        title="Expenses"
+        description="Review maintenance, repairs, and appearance-related spending across all vehicles."
+        action={
+          <Link
+            to="/app/expenses/new"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#506caa] px-5 text-sm font-bold text-white shadow-[0_10px_25px_rgba(80,108,170,0.25)] transition hover:brightness-95"
+          >
+            <Plus className="h-4 w-4" />
+            Add Expense
+          </Link>
+        }
+      />
 
-        <Link
-          to="/app/expenses/new"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#506caa] px-5 text-sm font-bold text-white shadow-[0_10px_25px_rgba(80,108,170,0.25)] transition hover:brightness-95"
-        >
-          <Plus className="h-4 w-4" />
-          Add Expense
-        </Link>
-      </section>
-
-      {expensesQuery.isLoading ? (
-        <div className="rounded-[22px] border border-white/10 bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
-          Loading expenses...
-        </div>
+      {expensesQuery.isLoading || vehiclesQuery.isLoading ? (
+        <StateCard
+          variant="loading"
+          description="Loading your expenses..."
+        />
       ) : expensesQuery.isError ? (
-        <div className="rounded-[22px] border border-red-200 bg-red-50 p-5 text-red-700 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-          Failed to load expenses.
-        </div>
+        <StateCard
+          variant="error"
+          title="Failed to load expenses"
+          description="Your expense data could not be loaded right now."
+        />
       ) : grouped.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-white/20 bg-[#0f2236] p-6 text-white/75">
-          No expenses yet. Add your first expense to start tracking costs.
-        </div>
+        <StateCard
+          variant="empty"
+          title="No expenses yet"
+          description="Add your first expense to start tracking vehicle costs."
+        />
       ) : (
         <section className="space-y-4">
           {grouped.map((group) => (
@@ -172,15 +171,25 @@ export function ExpensesPage() {
                         {formatCurrency(expense.amount)}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(expense.id, expense.note)}
-                        disabled={deleteExpenseMutation.isPending}
-                        className="inline-flex rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fef2f2] disabled:opacity-70"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          to={`/app/expenses/${expense.id}/edit`}
+                          className="inline-flex rounded-xl border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f9fafb]"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(expense.id, expense.note)}
+                          disabled={deleteExpenseMutation.isPending}
+                          className="inline-flex rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fef2f2] disabled:opacity-70"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -5,6 +5,8 @@ import {
   deleteExpense,
   listExpenses,
   listExpensesByCarId,
+  updateExpense,
+  type SaveExpenseInput,
 } from "@/features/expenses/api";
 import { getExpensesByCarId, mockExpenses } from "@/features/expenses/mockData";
 import type { ExpenseItem } from "@/features/expenses/types";
@@ -30,13 +32,35 @@ export function useVehicleExpenses(carId: string) {
   });
 }
 
+async function invalidateExpenseQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await queryClient.invalidateQueries({ queryKey: ["expenses"] });
+  await queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+}
+
 export function useCreateExpense() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: createExpense,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      await invalidateExpenseQueries(queryClient);
+    },
+  });
+}
+
+export function useUpdateExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: Partial<SaveExpenseInput>;
+    }) => updateExpense(id, input),
+    onSuccess: async () => {
+      await invalidateExpenseQueries(queryClient);
     },
   });
 }
@@ -47,7 +71,7 @@ export function useDeleteExpense() {
   return useMutation({
     mutationFn: deleteExpense,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      await invalidateExpenseQueries(queryClient);
     },
   });
 }

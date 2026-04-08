@@ -2,11 +2,13 @@ import { FormEvent, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useVehicles } from "@/features/vehicles/hooks";
 import { useCreateReminder } from "@/features/reminders/hooks";
+import { useToast } from "@/shared/toast/useToast";
 
 export function AddReminderPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const { showToast } = useToast();
   const vehiclesQuery = useVehicles();
   const createReminderMutation = useCreateReminder();
 
@@ -29,7 +31,11 @@ export function AddReminderPage() {
     event.preventDefault();
 
     if (!carId || !title.trim()) {
-      window.alert("Select a vehicle and enter a title first.");
+      showToast({
+        title: "Missing fields",
+        description: "Select a vehicle and enter a title first.",
+        variant: "error",
+      });
       return;
     }
 
@@ -42,11 +48,20 @@ export function AddReminderPage() {
         dueMileage: dueMileage ? Number(dueMileage) : null,
       });
 
+      showToast({
+        title: "Reminder created",
+        description: "Your maintenance reminder was saved successfully.",
+        variant: "success",
+      });
+
       navigate("/app/reminders");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create reminder.";
-      window.alert(message);
+      showToast({
+        title: "Failed to create reminder",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      });
     }
   }
 

@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useVehicles } from "@/features/vehicles/hooks";
 import { useCreateExpense } from "@/features/expenses/hooks";
+import { useToast } from "@/shared/toast/useToast";
 import type { ExpenseCategory } from "@/features/expenses/types";
 
 const CATEGORIES: { label: string; value: ExpenseCategory }[] = [
@@ -18,6 +19,7 @@ export function AddExpensePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const { showToast } = useToast();
   const vehiclesQuery = useVehicles();
   const createExpenseMutation = useCreateExpense();
 
@@ -32,14 +34,21 @@ export function AddExpensePage() {
   const [expenseDate, setExpenseDate] = useState(todayIso());
 
   const selectedVehicle = useMemo(() => {
-    return vehicles.find((vehicle) => String(vehicle.id) === String(carId)) ?? null;
+    return (
+      vehicles.find((vehicle) => String(vehicle.id) === String(carId)) ?? null
+    );
   }, [vehicles, carId]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     if (!carId || !note.trim() || !amount.trim() || !mileage.trim() || !expenseDate) {
-      window.alert("Select a vehicle and fill in note, amount, mileage, and date.");
+      showToast({
+        title: "Missing fields",
+        description:
+          "Select a vehicle and fill in note, amount, mileage, and date.",
+        variant: "error",
+      });
       return;
     }
 
@@ -54,11 +63,20 @@ export function AddExpensePage() {
         mileage: Number(mileage),
       });
 
+      showToast({
+        title: "Expense created",
+        description: "Your expense entry was saved successfully.",
+        variant: "success",
+      });
+
       navigate("/app/expenses");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create expense.";
-      window.alert(message);
+      showToast({
+        title: "Failed to create expense",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "error",
+      });
     }
   }
 
@@ -105,7 +123,8 @@ export function AddExpensePage() {
 
                 {selectedVehicle ? (
                   <div className="mt-2 text-xs text-[#eaf2ff]">
-                    Selected: {selectedVehicle.year} {selectedVehicle.vehicleName}
+                    Selected: {selectedVehicle.year}{" "}
+                    {selectedVehicle.vehicleName}
                   </div>
                 ) : null}
               </div>
