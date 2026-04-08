@@ -153,7 +153,7 @@ export function VehicleChatPage() {
 
           <div>
             <h2 className="text-[28px] font-extrabold tracking-tight text-[#FF8A00]">
-              AI Chat
+              SmartGarage AI Chat
             </h2>
             <p className="mt-2 text-sm text-[#e2e8f0]">Vehicle: {vehicleTitle}</p>
           </div>
@@ -163,7 +163,7 @@ export function VehicleChatPage() {
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-800 bg-red-950/60 p-4 text-red-100">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="text-sm leading-7">
-              This vehicle does not have a supported vehicle key, so the AI cannot answer vehicle-specific questions for it yet.
+              This vehicle does not have a supported vehicle key, so the SmartGarage AI cannot answer vehicle-specific questions for it yet.
             </div>
           </div>
         ) : null}
@@ -195,7 +195,7 @@ export function VehicleChatPage() {
           {askMutation.isPending ? (
             <div className="max-w-[85%] rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-[#111827] shadow-sm">
               <div className="mb-1 text-xs font-extrabold uppercase tracking-[0.1em] opacity-70">
-                AI
+                SmartGarage AI
               </div>
               <div className="text-sm">Thinking...</div>
             </div>

@@ -1,5 +1,12 @@
 import { Link } from "react-router-dom";
-import { CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useMemo } from "react";
 import { useVehicles } from "@/features/vehicles/hooks";
 import {
@@ -27,14 +34,14 @@ function formatDate(input: string | null | undefined) {
 
 function getStatusClasses(status: string) {
   if (status === "Overdue") {
-    return "bg-red-50 text-red-700 border-red-200";
+    return "bg-red-50 text-red-700 ring-1 ring-red-200";
   }
 
   if (status === "Completed") {
-    return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
   }
 
-  return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
 }
 
 export function RemindersPage() {
@@ -57,7 +64,7 @@ export function RemindersPage() {
     try {
       await deleteReminderMutation.mutateAsync(id);
     } catch {
-      // handled elsewhere via toasts in mutation-related flows if added later
+      // handled by mutation state / existing UX
     }
   }
 
@@ -65,7 +72,7 @@ export function RemindersPage() {
     try {
       await completeReminderMutation.mutateAsync(id);
     } catch {
-      // handled elsewhere via toasts in mutation-related flows if added later
+      // handled by mutation state / existing UX
     }
   }
 
@@ -87,10 +94,7 @@ export function RemindersPage() {
       />
 
       {remindersQuery.isLoading || vehiclesQuery.isLoading ? (
-        <StateCard
-          variant="loading"
-          description="Loading your reminders..."
-        />
+        <StateCard variant="loading" description="Loading your reminders..." />
       ) : remindersQuery.isError ? (
         <StateCard
           variant="error"
@@ -111,72 +115,113 @@ export function RemindersPage() {
             return (
               <div
                 key={reminder.id}
-                className="rounded-[22px] border border-white/10 bg-[#506caa] p-5 shadow-[0_10px_30px_rgba(0,0,0,0.16)]"
+                className="rounded-[26px] border border-white/10 bg-[#506caa] p-4 shadow-[0_12px_32px_rgba(0,0,0,0.16)] sm:p-5"
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="text-[18px] font-extrabold text-[#111827]">
-                      {reminder.title}
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/90 text-[#FF8A00] shadow-sm">
+                        <CalendarClock className="h-5 w-5" />
+                      </div>
+
+                      <h3 className="text-[22px] font-extrabold leading-tight text-[#111827]">
+                        {reminder.title}
+                      </h3>
+
+                      <div
+                        className={`inline-flex rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] ${getStatusClasses(
+                          reminder.status
+                        )}`}
+                      >
+                        {reminder.status}
+                      </div>
                     </div>
-                    <div className="mt-1 text-sm text-[#0b1220]/75">
+
+                    <div className="mt-3 text-sm font-semibold text-[#0b1220]/80">
                       {vehicle
                         ? `${vehicle.year} ${vehicle.vehicleName}`
                         : "Unknown vehicle"}
                     </div>
-                    <div className="mt-3 text-sm text-[#0b1220]/75">
-                      Due: {formatDate(reminder.dueDate)}
-                    </div>
-                    {reminder.dueMileage ? (
-                      <div className="mt-1 text-sm text-[#0b1220]/75">
-                        Due mileage: {Number(reminder.dueMileage).toLocaleString()} km
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-white/70">
+                        <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#6b7280]">
+                          Due date
+                        </div>
+                        <div className="mt-1 text-sm font-bold text-[#111827]">
+                          {formatDate(reminder.dueDate)}
+                        </div>
                       </div>
-                    ) : null}
+
+                      <div className="rounded-2xl bg-white/85 px-4 py-3 shadow-sm ring-1 ring-white/70">
+                        <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#6b7280]">
+                          Due mileage
+                        </div>
+                        <div className="mt-1 text-sm font-bold text-[#111827]">
+                          {reminder.dueMileage
+                            ? `${Number(reminder.dueMileage).toLocaleString()} km`
+                            : "Not set"}
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-[#10253d] px-4 py-3 text-white shadow-sm ring-1 ring-white/10">
+                        <div className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-white/55">
+                          Vehicle dashboard
+                        </div>
+                        <Link
+                          to={vehicle ? `/app/vehicles/${vehicle.id}` : "/app/vehicles"}
+                          className="mt-1 inline-flex items-center gap-2 text-sm font-extrabold text-white transition hover:text-[#FF8A00]"
+                        >
+                          Open vehicle
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+
                     {reminder.notes ? (
-                      <div className="mt-2 text-sm text-[#0b1220]/70">
+                      <div className="mt-4 rounded-2xl bg-white/80 px-4 py-3 text-sm leading-7 text-[#374151] shadow-sm ring-1 ring-white/70">
                         {reminder.notes}
                       </div>
                     ) : null}
                   </div>
 
-                  <div className="flex flex-col items-start gap-3 lg:items-end">
-                    <div
-                      className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-bold ${getStatusClasses(
-                        reminder.status
-                      )}`}
-                    >
-                      {reminder.status}
-                    </div>
+                  <div className="xl:w-[220px] xl:shrink-0">
+                    <div className="rounded-[22px] bg-[#10253d] p-3 ring-1 ring-white/10">
+                      <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-white/45">
+                        Actions
+                      </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        to={`/app/reminders/${reminder.id}/edit`}
-                        className="inline-flex rounded-xl border border-white/70 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f3f4f6]"
-                      >
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </Link>
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          to={`/app/reminders/${reminder.id}/edit`}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#111827] ring-1 ring-[#e5e7eb] transition hover:bg-[#f3f4f6]"
+                        >
+                          <Pencil className="h-4 w-4 text-[#111827]" />
+                          <span className="text-[#111827]">Edit</span>
+                        </Link>
 
-                      {!reminder.isCompleted ? (
+                        {!reminder.isCompleted ? (
+                          <button
+                            type="button"
+                            onClick={() => handleComplete(reminder.id)}
+                            disabled={completeReminderMutation.isPending}
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#fff7ed] px-4 text-sm font-bold text-[#111827] ring-1 ring-[#fed7aa] transition hover:bg-[#ffedd5] disabled:opacity-70"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Complete
+                          </button>
+                        ) : null}
+
                         <button
                           type="button"
-                          onClick={() => handleComplete(reminder.id)}
-                          disabled={completeReminderMutation.isPending}
-                          className="inline-flex rounded-xl border border-white/70 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f3f4f6] disabled:opacity-70"
+                          onClick={() => handleDelete(reminder.id, reminder.title)}
+                          disabled={deleteReminderMutation.isPending}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-[#111827] ring-1 ring-red-200 transition hover:bg-[#fef2f2] disabled:opacity-70"
                         >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Complete
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </button>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(reminder.id, reminder.title)}
-                        disabled={deleteReminderMutation.isPending}
-                        className="inline-flex rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fef2f2] disabled:opacity-70"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
