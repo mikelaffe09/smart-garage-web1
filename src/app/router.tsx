@@ -26,6 +26,7 @@ import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import { UpdateProfilePage } from "@/features/profile/pages/UpdateProfilePage";
 import { PrivacyPolicyPage } from "@/features/legal/pages/PrivacyPolicyPage";
 import { TermsAndConditionsPage } from "@/features/legal/pages/TermsAndConditionsPage";
+import { EditVehicleMaintenancePage } from "@/features/maintenance/pages/EditVehicleMaintenancePage";
 
 const router = createBrowserRouter([
   {
@@ -62,6 +63,7 @@ const router = createBrowserRouter([
           { path: "/app/vehicles", element: <VehiclesPage /> },
           { path: "/app/vehicles/new", element: <AddVehiclePage /> },
           { path: "/app/vehicles/:carId/edit", element: <EditVehiclePage /> },
+          { path: "/app/vehicles/:carId/maintenance", element: <EditVehicleMaintenancePage /> },
           { path: "/app/vehicles/:carId", element: <VehicleDashboardPage /> },
           { path: "/app/vehicles/:carId/chat", element: <VehicleChatPage /> },
           { path: "/app/reminders", element: <RemindersPage /> },

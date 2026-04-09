@@ -2,6 +2,15 @@ import { apiFetch } from "@/shared/api/client";
 
 export type ReminderStatus = "Upcoming" | "Overdue" | "Completed";
 
+function normalizeReminderDueDateForApi(value?: string | null) {
+  if (!value || !value.trim()) return null;
+
+  // Convert YYYY-MM-DD from the date input into a full ISO string
+  // so it matches the successful Swagger payload shape.
+  const iso = new Date(`${value}T00:00:00`).toISOString();
+  return iso;
+}
+
 export type ReminderItem = {
   id: string;
   carId: string;
@@ -83,7 +92,7 @@ export async function createReminder(input: SaveReminderInput) {
       carId: input.carId,
       title: input.title.trim(),
       notes: input.notes?.trim() || null,
-      dueDate: input.dueDate || null,
+      dueDate: normalizeReminderDueDateForApi(input.dueDate),
       dueMileage: input.dueMileage ?? null,
     },
   });
@@ -97,8 +106,11 @@ export async function updateReminder(
     method: "PUT",
     body: {
       title: input.title,
-      notes: input.notes,
-      dueDate: input.dueDate,
+      notes: input.notes?.trim() || null,
+      dueDate:
+        input.dueDate === undefined
+          ? undefined
+          : normalizeReminderDueDateForApi(input.dueDate),
       dueMileage: input.dueMileage,
       isCompleted: input.isCompleted,
     },

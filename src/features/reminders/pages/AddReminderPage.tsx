@@ -3,6 +3,15 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useVehicles } from "@/features/vehicles/hooks";
 import { useCreateReminder } from "@/features/reminders/hooks";
 import { useToast } from "@/shared/toast/useToast";
+import {
+  useMaintenanceRecommendations,
+  useMaintenanceStatus,
+} from "@/features/maintenance/hooks";
+import { RecommendedMaintenanceSection } from "@/features/maintenance/components/RecommendedMaintenanceSection";
+import type {
+  MaintenanceRecommendation,
+  MaintenanceStatusItem,
+} from "@/features/maintenance/types";
 
 export function AddReminderPage() {
   const navigate = useNavigate();
@@ -27,7 +36,13 @@ export function AddReminderPage() {
     );
   }, [vehicles, carId]);
 
-  async function handleSubmit(event: FormEvent) {
+  const maintenanceRecommendationsQuery = useMaintenanceRecommendations(
+    carId || undefined
+  );
+
+  const maintenanceStatusQuery = useMaintenanceStatus(carId || undefined);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!carId || !title.trim()) {
@@ -63,6 +78,34 @@ export function AddReminderPage() {
         variant: "error",
       });
     }
+  }
+
+  function handleUseRecommendedMileage(
+    recommendation: MaintenanceRecommendation,
+    statusItem?: MaintenanceStatusItem
+  ) {
+    const currentVehicleMileage = Number(selectedVehicle?.mileage ?? 0);
+    const intervalKm = Number(recommendation.intervalKm ?? 0);
+
+    const calculatedDueMileage =
+      typeof statusItem?.nextDueMileage === "number"
+        ? statusItem.nextDueMileage
+        : currentVehicleMileage + intervalKm;
+
+    setDueMileage(String(calculatedDueMileage));
+
+    if (!title.trim()) {
+      setTitle(recommendation.maintenanceName);
+    }
+
+    showToast({
+      title: "Mileage applied",
+      description:
+        typeof statusItem?.nextDueMileage === "number"
+          ? `${recommendation.maintenanceName} was set to ${calculatedDueMileage.toLocaleString()} km based on the last recorded service.`
+          : `${recommendation.maintenanceName} was set to ${calculatedDueMileage.toLocaleString()} km based on the vehicle's current mileage.`,
+      variant: "success",
+    });
   }
 
   return (
@@ -167,6 +210,27 @@ export function AddReminderPage() {
                 />
               </div>
             </div>
+
+            {carId ? (
+              <div className="mt-6">
+                <RecommendedMaintenanceSection
+                  vehicleName={
+                    selectedVehicle
+                      ? `${selectedVehicle.year} ${selectedVehicle.vehicleName}`
+                      : "this vehicle"
+                  }
+                  recommendations={
+                    maintenanceRecommendationsQuery.data?.recommendations ?? []
+                  }
+                  maintenanceStatus={maintenanceStatusQuery.data ?? []}
+                  isLoading={
+                    maintenanceRecommendationsQuery.isLoading ||
+                    maintenanceStatusQuery.isLoading
+                  }
+                  onUseMileage={handleUseRecommendedMileage}
+                />
+              </div>
+            ) : null}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button

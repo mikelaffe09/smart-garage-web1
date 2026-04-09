@@ -1,9 +1,18 @@
-import { Bot, CalendarClock, DollarSign, Pencil, Trash2 } from "lucide-react";
+import {
+  Bot,
+  CalendarClock,
+  DollarSign,
+  Pencil,
+  Trash2,
+  Wrench,
+} from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ReminderPreviewCard } from "@/features/vehicles/components/ReminderPreviewCard";
 import { useDeleteVehicle, useVehicle } from "@/features/vehicles/hooks";
 import { useVehicleReminders } from "@/features/reminders/hooks";
 import { useVehicleExpenses } from "@/features/expenses/hooks";
+import { useMaintenanceStatus } from "@/features/maintenance/hooks";
+import { MaintenanceStatusCard } from "@/features/maintenance/components/MaintenanceStatusCard";
 import type { ReminderItem } from "@/features/reminders/api";
 import type { ExpenseItem } from "@/features/expenses/types";
 import { StateCard } from "@/shared/ui/page";
@@ -23,11 +32,13 @@ export function VehicleDashboardPage() {
   const vehicleQuery = useVehicle(carId);
   const remindersQuery = useVehicleReminders(carId);
   const expensesQuery = useVehicleExpenses(carId);
+  const maintenanceStatusQuery = useMaintenanceStatus(carId || undefined);
   const deleteVehicleMutation = useDeleteVehicle();
 
   const vehicle = vehicleQuery.data;
   const reminders: ReminderItem[] = remindersQuery.data ?? [];
   const expenses: ExpenseItem[] = expensesQuery.data ?? [];
+  const maintenanceStatus = maintenanceStatusQuery.data ?? [];
 
   const totalExpenses = expenses.reduce(
     (sum: number, item: ExpenseItem) => sum + Number(item.amount || 0),
@@ -80,10 +91,10 @@ export function VehicleDashboardPage() {
           Mileage: {Number(vehicle.mileage || 0).toLocaleString()} km
         </p>
 
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             to={`/app/vehicles/${vehicle.id}/chat`}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#FF8A00] px-5 text-sm font-extrabold text-[#0B1220] transition hover:brightness-95"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#FF8A00] px-5 text-sm font-extrabold text-[#0B1220] transition hover:brightness-95"
           >
             <Bot className="h-4 w-4" />
             Ask AI
@@ -91,10 +102,18 @@ export function VehicleDashboardPage() {
 
           <Link
             to={`/app/vehicles/${vehicle.id}/edit`}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0B1220] px-5 text-sm font-extrabold text-white transition hover:opacity-95"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#0B1220] px-5 text-sm font-extrabold text-white transition hover:opacity-95"
           >
             <Pencil className="h-4 w-4" />
             Update
+          </Link>
+
+          <Link
+            to={`/app/vehicles/${vehicle.id}/maintenance`}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 text-sm font-extrabold text-white transition hover:bg-white/10"
+          >
+            <Wrench className="h-4 w-4" />
+            Proper Maintenance
           </Link>
         </div>
 
@@ -152,6 +171,52 @@ export function VehicleDashboardPage() {
       <section className="rounded-[24px] border border-[#e5e7eb] bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
+            <h3 className="text-lg font-extrabold">Proper Maintenance Status</h3>
+            <p className="mt-1 text-sm text-[#6b7280]">
+              Live maintenance tracking based on recorded service mileage and recommended intervals.
+            </p>
+          </div>
+
+          <Link
+            to={`/app/vehicles/${vehicle.id}/maintenance`}
+            className="rounded-xl bg-[#fff7ed] px-4 py-2 text-sm font-bold text-[#FF8A00] transition hover:bg-[#ffedd5]"
+          >
+            Edit intervals
+          </Link>
+        </div>
+
+        {maintenanceStatusQuery.isLoading ? (
+          <StateCard
+            variant="loading"
+            description="Loading maintenance status..."
+          />
+        ) : maintenanceStatusQuery.isError ? (
+          <StateCard
+            variant="error"
+            title="Failed to load maintenance status"
+            description="This vehicle’s maintenance data could not be loaded."
+          />
+        ) : maintenanceStatus.length === 0 ? (
+          <StateCard
+            variant="empty"
+            title="No maintenance status found"
+            description="Set maintenance intervals and service records to start tracking proper maintenance."
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {maintenanceStatus.map((item) => (
+              <MaintenanceStatusCard
+                key={`${item.type}-${item.intervalKm}`}
+                item={item}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-[24px] border border-[#e5e7eb] bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
             <h3 className="text-lg font-extrabold">Upcoming / Overdue Reminders</h3>
             <p className="mt-1 text-sm text-[#6b7280]">
               Quick view of this vehicle’s reminder status.
@@ -195,7 +260,7 @@ export function VehicleDashboardPage() {
       <section className="rounded-[24px] border border-[#e5e7eb] bg-white p-5 text-[#111827] shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
         <h3 className="text-lg font-extrabold">Quick Actions</h3>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-5">
           <Link
             to={`/app/expenses/new?carId=${vehicle.id}`}
             className="rounded-2xl border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-4 text-sm font-extrabold transition hover:bg-[#e5e7eb]"
@@ -222,6 +287,13 @@ export function VehicleDashboardPage() {
             className="rounded-2xl border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-4 text-sm font-extrabold transition hover:bg-[#e5e7eb]"
           >
             Edit Vehicle
+          </Link>
+
+          <Link
+            to={`/app/vehicles/${vehicle.id}/maintenance`}
+            className="rounded-2xl border border-[#e5e7eb] bg-[#f3f4f6] px-4 py-4 text-sm font-extrabold transition hover:bg-[#e5e7eb]"
+          >
+            Proper Maintenance
           </Link>
         </div>
       </section>
