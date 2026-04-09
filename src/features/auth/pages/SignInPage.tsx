@@ -1,8 +1,10 @@
 import { FormEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/shared/supabase/client";
+import { AppLogo } from "@/shared/ui/AppLogo"; 
 
 export function SignInPage() {
+ 
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,6 +38,10 @@ export function SignInPage() {
 
   return (
     <div>
+
+       <div className="mb-8 flex justify-center">
+        <AppLogo />
+      </div>
       <div className="mb-8">
         <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[#FF8A00]">
           Smart Garage

@@ -24,12 +24,22 @@ import { AddExpensePage } from "@/features/expenses/pages/AddExpensePage";
 import { EditExpensePage } from "@/features/expenses/pages/EditExpensePage";
 import { ProfilePage } from "@/features/profile/pages/ProfilePage";
 import { UpdateProfilePage } from "@/features/profile/pages/UpdateProfilePage";
+import { PrivacyPolicyPage } from "@/features/legal/pages/PrivacyPolicyPage";
+import { TermsAndConditionsPage } from "@/features/legal/pages/TermsAndConditionsPage";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />,
   },
+  {
+  path: "/privacy-policy",
+  element: <PrivacyPolicyPage />,
+},
+{
+  path: "/terms-and-conditions",
+  element: <TermsAndConditionsPage />,
+},
   {
     element: <GuestRoute />,
     children: [

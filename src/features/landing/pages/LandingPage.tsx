@@ -18,12 +18,20 @@ import {
   Wrench,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/useAuth";
+import { AppLogo } from "@/shared/ui/AppLogo";
 
 /*
   Replace these 2 links with your real store URLs when ready.
 */
 const APP_STORE_URL = "https://apps.apple.com/";
 const PLAY_STORE_URL = "https://play.google.com/store";
+
+/*
+  Placeholder legal routes.
+  Create these pages later and keep these paths the same.
+*/
+const PRIVACY_POLICY_PATH = "/privacy-policy";
+const TERMS_AND_CONDITIONS_PATH = "/terms-and-conditions";
 
 const TRUST_POINTS = [
   "Vehicle dashboards",
@@ -132,7 +140,7 @@ function FaqItem({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -157,66 +165,68 @@ function FaqItem({
 
 function AppPreviewMock() {
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#0f2236] p-5 shadow-[0_22px_80px_rgba(0,0,0,0.42)]">
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="relative w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#0f2236] p-5 shadow-[0_22px_80px_rgba(0,0,0,0.42)] sm:p-6">
+      <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-16 right-0 h-52 w-52 rounded-full bg-[#FF8A00]/10 blur-[80px]" />
         <div className="absolute bottom-0 left-0 h-44 w-44 rounded-full bg-[#506caa]/20 blur-[80px]" />
       </div>
 
       <div className="relative">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-white/40">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/45">
               Smart Garage
             </div>
-            <div className="text-2xl font-extrabold text-[#FF8A00]">
-              Vehicle Manager + AI Mechanic
+            <div className="mt-1 text-lg font-extrabold text-white">
+              Same product feel across web and mobile
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#FF8A00] px-3 py-2 text-xs font-extrabold text-[#111827]">
+          <div className="shrink-0 rounded-2xl bg-[#FF8A00] px-3 py-2 text-xs font-extrabold text-[#111827]">
             Web + Mobile
           </div>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="rounded-[28px] bg-gradient-to-br from-[#10253d] to-[#0b1c2e] p-5 ring-1 ring-white/8">
-            <div className="text-sm uppercase tracking-[0.18em] text-white/45">
+          <div className="rounded-[28px] bg-gradient-to-br from-[#10253d] to-[#0b1c2e] p-6 ring-1 ring-white/8">
+            <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/45">
               Dashboard
             </div>
-            <div className="mt-2 text-3xl font-extrabold text-[#FF8A00]">
+
+            <div className="mt-3 text-[30px] font-extrabold leading-tight text-[#FF8A00] sm:text-[34px]">
               Your Garage
             </div>
-            <div className="mt-3 max-w-xl text-sm leading-7 text-white/72">
+
+            <div className="mt-4 max-w-xl text-sm leading-7 text-white/72">
               Open any vehicle, track costs, manage reminders, and use AI help
               without bouncing between different tools.
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-white p-4 text-[#111827]">
-                <div className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white p-4 text-[#111827] shadow-sm">
+                <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
                   Vehicles
                 </div>
-                <div className="mt-2 text-2xl font-extrabold">Organized</div>
+                <div className="mt-2 text-xl font-extrabold">Organized</div>
               </div>
 
-              <div className="rounded-2xl bg-white p-4 text-[#111827]">
-                <div className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
+              <div className="rounded-2xl bg-white p-4 text-[#111827] shadow-sm">
+                <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
                   Reminders
                 </div>
-                <div className="mt-2 text-2xl font-extrabold">Tracked</div>
+                <div className="mt-2 text-xl font-extrabold">Tracked</div>
               </div>
 
-              <div className="rounded-2xl bg-white p-4 text-[#111827]">
-                <div className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
+              <div className="rounded-2xl bg-white p-4 text-[#111827] shadow-sm">
+                <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#6b7280]">
                   Costs
                 </div>
-                <div className="mt-2 text-2xl font-extrabold">Visible</div>
+                <div className="mt-2 text-xl font-extrabold">Visible</div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid gap-4">
             <div className="rounded-[26px] bg-white p-5 text-[#111827] shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
               <div className="mb-3 flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff7ed]">
@@ -230,7 +240,7 @@ function AppPreviewMock() {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-[#f9fafb] p-3 text-sm text-[#374151]">
+              <div className="rounded-2xl bg-[#f9fafb] p-3 text-sm leading-7 text-[#374151]">
                 “My car makes a clicking sound when starting.”
               </div>
 
@@ -289,20 +299,16 @@ export function LandingPage() {
     <div className="min-h-screen bg-[#07192b] text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07192b]/88 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link to="/" className="block">
-            <div className="text-[30px] font-extrabold tracking-tight text-[#FF8A00]">
-              Smart Garage
-            </div>
-            <div className="text-sm text-white/60">
-              Vehicle manager + AI mechanic
-            </div>
-          </Link>
+          <AppLogo clickable to="/" />
 
           <nav className="hidden items-center gap-8 lg:flex">
             <a href="#features" className="text-sm text-white/70 hover:text-white">
               Features
             </a>
-            <a href="#how-it-works" className="text-sm text-white/70 hover:text-white">
+            <a
+              href="#how-it-works"
+              className="text-sm text-white/70 hover:text-white"
+            >
               How it works
             </a>
             <a href="#download" className="text-sm text-white/70 hover:text-white">
@@ -343,14 +349,18 @@ export function LandingPage() {
 
       <main>
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
+          <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-[-8%] top-[-4%] h-[480px] w-[480px] rounded-full bg-[#FF8A00]/12 blur-[130px]" />
             <div className="absolute right-[-6%] top-[18%] h-[420px] w-[420px] rounded-full bg-[#506caa]/20 blur-[130px]" />
             <div className="absolute left-[28%] top-[38%] h-[260px] w-[260px] rounded-full bg-white/5 blur-[100px]" />
           </div>
 
-          <div className="relative mx-auto grid max-w-[1440px] gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:py-24">
+          <div className="relative mx-auto grid max-w-[1440px] gap-12 px-4 py-16 sm:px-6 2xl:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-24">
             <div className="flex flex-col justify-center">
+              <div className="mb-6">
+                <AppLogo />
+              </div>
+
               <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75">
                 <Sparkles className="h-4 w-4 text-[#FF8A00]" />
                 Built to manage real vehicles, not just look pretty
@@ -358,7 +368,9 @@ export function LandingPage() {
 
               <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
                 The smarter way to manage
-                <span className="block text-[#FF8A00]">your garage and your cars</span>
+                <span className="block text-[#FF8A00]">
+                  your garage and your cars
+                </span>
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 sm:text-lg">
@@ -472,7 +484,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-6 lg:px-8">
+        <section
+          id="features"
+          className="mx-auto max-w-[1440px] px-4 py-20 sm:px-6 lg:px-8"
+        >
           <div className="max-w-3xl">
             <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">
               Features
@@ -542,7 +557,9 @@ export function LandingPage() {
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff7ed]">
                   <BellRing className="h-6 w-6 text-[#FF8A00]" />
                 </div>
-                <h3 className="text-xl font-extrabold">Prevent missed maintenance</h3>
+                <h3 className="text-xl font-extrabold">
+                  Prevent missed maintenance
+                </h3>
                 <p className="mt-3 text-sm leading-7 text-[#6b7280]">
                   Know what is due before it becomes a bigger and more expensive
                   problem.
@@ -553,7 +570,9 @@ export function LandingPage() {
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff7ed]">
                   <Receipt className="h-6 w-6 text-[#FF8A00]" />
                 </div>
-                <h3 className="text-xl font-extrabold">Understand your costs</h3>
+                <h3 className="text-xl font-extrabold">
+                  Understand your costs
+                </h3>
                 <p className="mt-3 text-sm leading-7 text-[#6b7280]">
                   Keep repairs, services, and upgrade spending visible instead of
                   buried in random receipts.
@@ -585,7 +604,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="mx-auto max-w-[1440px] px-4 py-20 sm:px-6 lg:px-8">
+        <section
+          id="how-it-works"
+          className="mx-auto max-w-[1440px] px-4 py-20 sm:px-6 lg:px-8"
+        >
           <div className="max-w-3xl">
             <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">
               How it works
@@ -616,6 +638,10 @@ export function LandingPage() {
         <section id="download" className="bg-[#0b2035]">
           <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
             <div className="flex flex-col justify-center">
+              <div className="mb-4">
+                <AppLogo />
+              </div>
+
               <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">
                 Download the mobile app
               </div>
@@ -657,12 +683,10 @@ export function LandingPage() {
               <div className="mx-auto max-w-[320px] rounded-[34px] border border-white/10 bg-[#07192b] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
                 <div className="rounded-[28px] bg-[#09192a] p-4">
                   <div className="mb-4 rounded-2xl bg-white px-4 py-3 text-[#111827]">
-                    <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#6b7280]">
-                      Smart Garage
+                    <div className="mb-2">
+                      <AppLogo />
                     </div>
-                    <div className="mt-1 text-xl font-extrabold">
-                      Mobile App
-                    </div>
+                    <div className="text-sm text-[#6b7280]">Mobile App</div>
                   </div>
 
                   <div className="space-y-3">
@@ -691,13 +715,17 @@ export function LandingPage() {
               </div>
 
               <div className="mt-5 text-center text-sm text-white/62">
-                Add your real store links and this section becomes production-ready.
+                Add your real store links and this section becomes
+                production-ready.
               </div>
             </div>
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-[1000px] px-4 py-20 sm:px-6 lg:px-8">
+        <section
+          id="faq"
+          className="mx-auto max-w-[1000px] px-4 py-20 sm:px-6 lg:px-8"
+        >
           <div className="text-center">
             <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">
               FAQ
@@ -720,6 +748,10 @@ export function LandingPage() {
 
         <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
           <div className="rounded-[40px] bg-gradient-to-br from-[#10253d] to-[#0b1c2e] p-8 text-center shadow-[0_20px_70px_rgba(0,0,0,0.32)] ring-1 ring-white/8 sm:p-10">
+            <div className="mb-6 flex justify-center">
+              <AppLogo />
+            </div>
+
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               Start managing your garage properly
             </h2>
@@ -773,32 +805,62 @@ export function LandingPage() {
       </main>
 
       <footer className="border-t border-white/10 bg-[#07192b]">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
-            <div className="text-[24px] font-extrabold tracking-tight text-[#FF8A00]">
-              Smart Garage
-            </div>
-            <div className="text-sm text-white/55">
-              Vehicle manager + AI mechanic
+        <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <AppLogo clickable to="/" />
+
+            <div className="flex flex-wrap gap-4 text-sm text-white/60">
+              <Link to="/" className="hover:text-white">
+                Home
+              </Link>
+              <Link to="/sign-in" className="hover:text-white">
+                Log In
+              </Link>
+              <Link to="/sign-up" className="hover:text-white">
+                Sign Up
+              </Link>
+              <Link to={PRIVACY_POLICY_PATH} className="hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link to={TERMS_AND_CONDITIONS_PATH} className="hover:text-white">
+                Terms & Conditions
+              </Link>
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-white"
+              >
+                App Store
+              </a>
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-white"
+              >
+                Google Play
+              </a>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4 text-sm text-white/60">
-            <Link to="/" className="hover:text-white">
-              Home
-            </Link>
-            <Link to="/sign-in" className="hover:text-white">
-              Log In
-            </Link>
-            <Link to="/sign-up" className="hover:text-white">
-              Sign Up
-            </Link>
-            <a href={APP_STORE_URL} target="_blank" rel="noreferrer" className="hover:text-white">
-              App Store
-            </a>
-            <a href={PLAY_STORE_URL} target="_blank" rel="noreferrer" className="hover:text-white">
-              Google Play
-            </a>
+          <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+            <div>© {new Date().getFullYear()} Smart Garage. All rights reserved.</div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to={PRIVACY_POLICY_PATH}
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10 hover:text-white"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                to={TERMS_AND_CONDITIONS_PATH}
+                className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:bg-white/10 hover:text-white"
+              >
+                Terms & Conditions
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

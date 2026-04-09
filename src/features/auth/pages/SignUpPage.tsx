@@ -1,8 +1,15 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/shared/supabase/client";
+import { AppLogo } from "@/shared/ui/AppLogo";
 
 export function SignUpPage() {
+
+
+   <div className="mb-8 flex justify-center">
+    <AppLogo />
+  </div>
+
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState("");
@@ -38,10 +45,11 @@ export function SignUpPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <div className="text-sm font-semibold uppercase tracking-[0.2em] text-[#FF8A00]">
-          Smart Garage
+
+       <div className="mb-8 flex justify-center">
+          <AppLogo />
         </div>
+      <div className="mb-8">
         <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-[#111827]">
           Create account
         </h2>
